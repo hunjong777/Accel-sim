@@ -23,11 +23,12 @@ class KernelState{
     bool activate;
 
     public:
-    KernelState(int kernelID, int candidacybitvector, int channelstatebitvector, int in_out_tensorID, bool activate=true){
+    KernelState(int kernelID, int candidacybitvector, int channelstatebitvector, int in_out_tensorID, int slowdown,bool activate=true){
     this-> kernelID = kernelID;
     this-> channelcandidacy = channelstatebitvector;
     this-> in_out_tensorID = in_out_tensorID;    
     this-> channelstatebitvector = channelstatebitvector;
+    this-> slowdown = slowdown;
     };
     int getkernelslowdown(){return slowdown;};
     friend KernelStateTable;
@@ -47,7 +48,7 @@ class KernelStateTable{
     vector<KernelState *> kernel;
 
     public:
-    void appendkernel(int kernelID, KernelState& current){kerenl.insert(kernel.begin() + kernelID, current);};
+    void appendkernel(int kernelID, KernelState& current){kernel.insert(kernel.begin() + kernelID, current);};
     int getslowdown(int kernel_num);
     void reactivate(int k, int prevoffchn);
     void removeCandidate(int k, int prevoffchn);
@@ -62,7 +63,7 @@ int KernelStateTable::getslowdown(int kernel_num){
 
 void KernelStateTable::reactivate(int k, int prevoffchn){
     cout<<"reactivate kernel : "<<k<<" done"<<endl;
-    kernel.at(k)->activate = false;
+    kernel[k]->activate = false;
 }
 
 void KernelStateTable::removeCandidate(int k, int prevoffchn){          //?
@@ -70,9 +71,8 @@ void KernelStateTable::removeCandidate(int k, int prevoffchn){          //?
 }
 
 int KernelStateTable::getcandidatechannels(int k){
-    int freespace;
-    freespace =                                         //candidacy bit vector로부터 channel id를 알 수 있는 방법?
-
+                                            //candidacy bit vector로부터 channel id를 알 수 있는 방법?
+    return kernel[k]->channelcandidacy;
 }
 
 class TensorState{
@@ -82,18 +82,18 @@ class TensorState{
     int lastdeact_iter;
     public:
     friend TensorStateTable;
-}
+};
 
 class TensorStateTable{
     vector<TensorState *> Tensor;
 
     public:
-    void appendtensor(TensorState * current){Tensor.insert(Tensor.begin() + tensorID, current);};
+    void appendtensor(TensorState * current, int tensorID){Tensor.insert(Tensor.begin() + tensorID, current);};
     int getlastdeact_iter(int k);
-}
+};
 
 int TensorStateTable::getlastdeact_iter(int k){
-    retrun Tensor.at(k)->lastdeact_iter;
+    return Tensor.at(k)->lastdeact_iter;
 }
 
 int getkernelInfo(KernelStateTable &KST){
@@ -101,8 +101,9 @@ int getkernelInfo(KernelStateTable &KST){
     int channelcandidacy;
     int channelstatebitvector;
     int in_out_tensorID;            //input이 들어온다고 가정
+    int slowdown;
 
-    KernelState *current = new KernelState(kernelID, candidacybitvector, channelstatebitvector, in_out_tensorID);
+    KernelState *current = new KernelState(kernelID, channelcandidacy, channelstatebitvector, in_out_tensorID, slowdown);
     KST.appendkernel(kernelID, current);    //KST에 추가
     return kernelID;
 }
@@ -129,13 +130,15 @@ int main()
         //undo the movement of some of the pages in t in previous iteration
     }
 
-    for(int t< KST.tensors(k); t<KST.tensorsend(k), t++){
+    for(int t = KST.tensors(k); t < KST.tensorsend(k); t++){
     if(TST.getlastdeact_iter(t)==currentiteration) break;
     }
 
-    //////////////line 23//////////////
-    offchn = CST.getfreespace(c)
+    //////////////Line 23//////////////
+    int candchns = KST.getcandidatechannels();
+    offchn = CST.getfreespace(c);
 
+    //////////////Line 26//////////////
     movingpages();
     
     
