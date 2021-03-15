@@ -91,7 +91,6 @@ void KernelStateTable::removeCandidate(int k, int prevoffchn){
 }
 
 int KernelStateTable::getcandidatechannels(int k){
-                                            //candidacy bit vector로부터 channel id를 알 수 있는 방법?
     return kernel[k]->channelcandidacy;
 }
 
